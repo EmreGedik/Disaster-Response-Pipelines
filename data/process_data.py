@@ -1,6 +1,8 @@
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
+from models.train_classifier import tokenize
+from collections import Counter
 
 def load_data(messages_filepath, categories_filepath):
     
@@ -46,7 +48,45 @@ def clean_data(df):
     # In 'related' column, there are rows with "2" values. Here, I remove them.
     df = df[(df['related'].isin([0, 1]))]
     
+    # reset index of the dataframe
+    df.reset_index(inplace = True, drop = True)
+        
     return df
+
+
+
+def vocabulary_saver(df, database_filename):
+    # take the messages from dataframe
+    X = df['message']
+    
+    # create the vocabulary using tokenize
+    vocabulary = []
+    for i in range(len(X)):
+        vocabulary += tokenize(X[i])
+    
+    # count the number of occurances for each word in the vocabulary
+    # and sort the from the most common to least common
+    vcb = Counter(vocabulary)
+    words_and_occurances = vcb.most_common()
+    
+    # create a dataframe called vocabulary_df to store the vocabulary and
+    # number of occurances
+    word = []
+    for i in range(len(words_and_occurances)):
+        word.append(words_and_occurances[i][0])
+    
+    occurance = []
+    for i in range(len(words_and_occurances)):
+        occurance.append(words_and_occurances[i][1])
+    
+    data = {'word':  word, 'occurance': occurance}
+    vocabulary_df = pd.DataFrame (data, columns = ['word','occurance'])
+    
+    # create a database and store the dataframe in a database table
+    engine = create_engine('sqlite:///'+database_filename)
+    vocabulary_df.to_sql('Vocabulary', engine, index=False)
+
+    pass  
 
 
 
@@ -54,7 +94,7 @@ def save_data(df, database_filename):
     
     # create a database and store the dataframe in a database table
     engine = create_engine('sqlite:///'+database_filename)
-    df.to_sql('InsertTableName', engine, index=False)
+    df.to_sql('MessagesAndLabels', engine, index=False)
 
     pass  
 
@@ -74,8 +114,11 @@ def main():
         
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
         save_data(df, database_filepath)
+
+        print('Saving vocabulary...\n    DATABASE: {}'.format(database_filepath))
+        vocabulary_saver(df, database_filepath)        
         
-        print('Cleaned data saved to database!')
+        print('Cleaned data and vocabulary saved to database!')
     
     else:
         print('Please provide the filepaths of the messages and categories '\

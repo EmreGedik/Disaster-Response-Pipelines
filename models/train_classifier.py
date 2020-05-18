@@ -36,7 +36,7 @@ def load_data(database_filepath):
     engine = create_engine('sqlite:///' + database_filepath)
     
     # read the table from the database into a dataframe
-    df = pd.read_sql("SELECT * FROM InsertTableName", engine)
+    df = pd.read_sql("SELECT * FROM MessagesAndLabels", engine)
     
     # create X from the "message" column
     X = df['message']
@@ -57,7 +57,7 @@ def tokenize(text):
     text = text.lower()
     
     # remove punctuation characters
-    text = re.sub(r"[^a-zA-Z0-9]", "", text)
+    text = re.sub(r"[^a-zA-Z0-9]", " ", text)
     
     # split text into tokens
     words = word_tokenize(text)
