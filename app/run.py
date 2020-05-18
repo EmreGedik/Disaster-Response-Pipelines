@@ -27,7 +27,8 @@ def tokenize(text):
 
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
-df = pd.read_sql_table('InsertTableName', engine)
+df = pd.read_sql_table('MessagesAndLabels', engine)
+vocabulary_df = pd.read_sql_table('Vocabulary', engine)
 
 # load model
 model = joblib.load("../models/classifier.pkl")
@@ -42,6 +43,15 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+    
+    # extracting data for my second visualisation
+    occurances = vocabulary_df.groupby('word').sum()['occurance'].nlargest(10)
+    most_common_words = list(occurances.index)
+    
+    # extracting data for my third visualisation
+    most_common_label_counts = df.iloc[:,4:40].sum(axis=0, skipna = True).sort_values(ascending=False).nlargest(10)
+    label_names = list(most_common_label_counts.index)
+    
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -61,6 +71,46 @@ def index():
                 },
                 'xaxis': {
                     'title': "Genre"
+                }
+            }
+        },
+        
+        # start of second visualisation data and layout
+                {
+            'data': [
+                Bar(
+                    x=most_common_words,
+                    y=occurances
+                )
+            ],
+
+            'layout': {
+                'title': 'Most Common Words in the Vocabulary',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Words"
+                }
+            }
+        },
+        
+        # start of third visualisation data and layout
+                {
+            'data': [
+                Bar(
+                    x=label_names,
+                    y=most_common_label_counts
+                )
+            ],
+
+            'layout': {
+                'title': 'Most Common Labels in the Dataset',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Labels"
                 }
             }
         }
